@@ -1,7 +1,7 @@
 replicaCount: 1
 
 image:
-  repository: ghcr.io/dkubeio/todo
+  repository: docker.io/sharmisthamoon/todo
   tag: ""
   pullPolicy: IfNotPresent
 

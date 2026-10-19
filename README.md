@@ -35,6 +35,6 @@ chart for the DKubeX catalog:
 - The page follows the platform theme in `localStorage['dkubex-ui-theme']`.
 
 ```sh
-docker build -t ghcr.io/dkubeio/todo:0.1.0 . && docker push ghcr.io/dkubeio/todo:0.1.0
+docker build -t docker.io/sharmisthamoon/todo:0.1.0 . && docker push docker.io/sharmisthamoon/todo:0.1.0
 python3 ~/.claude/skills/package-app/scripts/validate_chart.py charts/todo
 ```
