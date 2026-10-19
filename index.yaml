@@ -29,7 +29,43 @@ entries:
         timeout: "5m"
     apiVersion: v2
     appVersion: 0.1.0
-    created: "2026-10-19T10:40:37.556232708Z"
+    created: "2026-10-19T11:04:09.01056885Z"
+    description: A simple todo list backed by PostgreSQL.
+    digest: 29541bc3f809e4e779e1159e461730664f01749c0ef334764abfe5ff100a4c12
+    name: todo
+    type: application
+    urls:
+    - https://sharmistha2023.github.io/todo/todo-0.1.1.tgz
+    version: 0.1.1
+  - annotations:
+      dkubex: |
+        url: "/todo"
+        displayName: Todo
+        icon: "https://raw.githubusercontent.com/dkubeio/todo/main/assets/icon.svg"
+        docs: "https://dkubeio.github.io/docs-site/components/todo/"
+        images:
+          - "https://raw.githubusercontent.com/dkubeio/todo/main/assets/screenshot-1.png"
+        description: "A simple todo list backed by PostgreSQL."
+        categories:
+          - "Other"
+        roles:
+          - "admin"
+          - "user"
+        resources:
+          cpu:
+            min: "50m"
+            recommended: "100m"
+          memory:
+            min: "96Mi"
+            recommended: "192Mi"
+        dependencies:
+          - postgres
+        routing:
+          type: basepath
+        timeout: "5m"
+    apiVersion: v2
+    appVersion: 0.1.0
+    created: "2026-10-19T11:04:09.01026315Z"
     description: A simple todo list backed by PostgreSQL.
     digest: 92cd05513c87fdfaeda4535e85d233981df686a6ad234bc47037659770276cdb
     name: todo
@@ -37,4 +73,4 @@ entries:
     urls:
     - https://sharmistha2023.github.io/todo/todo-0.1.0.tgz
     version: 0.1.0
-generated: "2026-10-19T10:40:37.555573068Z"
+generated: "2026-10-19T11:04:09.009627222Z"
