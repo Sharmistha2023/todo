@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Todo</title>
+<script>
+  // Follow the DKubeX shell's theme ("dark" | "light" | "system"; absent means dark) and stay in
+  // sync when the user toggles it while the app is open.
+  function applyTheme(stored) {
+    const pref = stored || "dark";
+    const dark = pref === "system" ? matchMedia("(prefers-color-scheme: dark)").matches : pref !== "light";
+    document.documentElement.dataset.theme = dark ? "dark" : "light";
+  }
+  function storedTheme() {
+    try { return localStorage.getItem("dkubex-ui-theme"); } catch { return null; }
+  }
+  applyTheme(storedTheme());
+  addEventListener("storage", (e) => { if (e.key === "dkubex-ui-theme") applyTheme(e.newValue); });
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => applyTheme(storedTheme()));
+</script>
+<style>
+  :root { --bg: #161618; --card: #1f1f22; --text: #ececf0; --muted: #9a9aa2; --line: #333338;
+          --accent: #5b8cff; --danger: #ef6b6b; --error-bg: #3a1f1f; color-scheme: dark; }
+  :root[data-theme="light"] { --bg: #f7f7f8; --card: #fff; --text: #1d1d1f; --muted: #6e6e73;
+          --line: #e3e3e6; --accent: #2563eb; --danger: #c62828; --error-bg: #fdecea;
+          color-scheme: light; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 36rem; margin: 0 auto; padding: 2rem 1rem; }
+  h1 { margin: 0 0 1rem; font-size: 1.6rem; }
+  form { display: flex; gap: .5rem; }
+  input[type=text] { flex: 1; min-width: 0; padding: .6rem .75rem; font: inherit; color: inherit;
+         background: var(--card); border: 1px solid var(--line); border-radius: 8px; }
+  input[type=text]:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  button { padding: .55rem .9rem; font: inherit; border-radius: 8px; cursor: pointer;
+           border: 1px solid var(--line); background: var(--card); color: inherit; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button.danger { color: var(--danger); }
+  #error { margin: .75rem 0 0; padding: .5rem .75rem; border-radius: 8px;
+           background: var(--error-bg); color: var(--danger); }
+  #error:empty { display: none; }
+  ul { list-style: none; margin: 1.25rem 0 0; padding: 0; }
+  li { display: flex; align-items: center; gap: .6rem; padding: .6rem .75rem; margin-bottom: .5rem;
+       background: var(--card); border: 1px solid var(--line); border-radius: 8px; }
+  li input[type=checkbox] { width: 1.15rem; height: 1.15rem; flex: none; }
+  li .title { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  li.done .title { text-decoration: line-through; color: var(--muted); }
+  li button { padding: .3rem .6rem; font-size: .9rem; }
+  #empty { color: var(--muted); text-align: center; margin-top: 1.5rem; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Todo</h1>
+  <form id="add">
+    <input id="new" type="text" maxlength="200" placeholder="What needs doing?" aria-label="New task">
+    <button class="primary" type="submit">Add</button>
+  </form>
+  <p id="error" role="alert"></p>
+  <ul id="list"></ul>
+  <p id="empty" hidden>No tasks yet.</p>
+</main>
+<script>
+  // The server fills in its base path, so calls work under the workspace prefix.
+  const API = "__BASE_PATH__/api/tasks";
+  const MAX = 200;
+  const $ = (id) => document.getElementById(id);
+
+  function showError(msg) { $("error").textContent = msg || ""; }
+
+  async function call(url, opts = {}) {
+    let res;
+    try {
+      res = await fetch(url, { headers: { "Content-Type": "application/json" }, ...opts });
+    } catch {
+      throw new Error("Couldn't reach the server. Check your connection and try again.");
+    }
+    if (res.status === 204) return null;
+    const body = await res.json().catch(() => null);
+    if (!res.ok) throw new Error(typeof body?.detail === "string" ? body.detail : "Something went wrong. Please try again.");
+    return body;
+  }
+
+  function validate(title) {
+    title = title.trim();
+    if (!title) throw new Error("Task title cannot be empty.");
+    if (title.length > MAX) throw new Error(`Task title must be ${MAX} characters or fewer.`);
+    return title;
+  }
+
+  function render(tasks) {
+    const list = $("list");
+    list.replaceChildren(...tasks.map(renderTask));
+    $("empty").hidden = tasks.length > 0;
+  }
+
+  function renderTask(t) {
+    const li = document.createElement("li");
+    li.className = t.completed ? "done" : "";
+
+    const box = document.createElement("input");
+    box.type = "checkbox";
+    box.checked = t.completed;
+    box.setAttribute("aria-label", "Mark done");
+    box.onchange = () => run(() => call(`${API}/${t.id}`, { method: "PUT", body: JSON.stringify({ completed: box.checked }) }));
+
+    const title = document.createElement("span");
+    title.className = "title";
+    title.textContent = t.title;
+
+    const edit = document.createElement("button");
+    edit.textContent = "Edit";
+    edit.onclick = () => {
+      const next = prompt("Edit task", t.title);
+      if (next === null) return;
+      run(() => call(`${API}/${t.id}`, { method: "PUT", body: JSON.stringify({ title: validate(next) }) }));
+    };
+
+    const del = document.createElement("button");
+    del.className = "danger";
+    del.textContent = "Delete";
+    del.onclick = () => {
+      if (confirm(`Delete "${t.title}"?`)) run(() => call(`${API}/${t.id}`, { method: "DELETE" }));
+    };
+
+    li.append(box, title, edit, del);
+    return li;
+  }
+
+  async function run(action) {
+    try {
+      await action();
+      showError("");
+    } catch (e) {
+      showError(e.message);
+    }
+    await load();
+  }
+
+  async function load() {
+    try { render(await call(API)); } catch (e) { showError(e.message); }
+  }
+
+  $("add").onsubmit = (e) => {
+    e.preventDefault();
+    const input = $("new");
+    run(async () => {
+      await call(API, { method: "POST", body: JSON.stringify({ title: validate(input.value) }) });
+      input.value = "";
+    });
+  };
+
+  load();
+</script>
+</body>
+</html>

@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "todo.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels: {{- include "todo.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels: {{- include "todo.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "todo.selectorLabels" . | nindent 8 }}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: app
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+          env:
+            - name: PORT
+              value: {{ .Values.service.port | quote }}
+            # DKubeX serves base-path apps under /<app-name>; the app must honour it.
+            - name: DKUBEX_BASE_PATH
+              value: "/{{ include "todo.name" . }}"
+            # Reject requests that did not come through the gateway (no X-Auth-Request-User).
+            - name: REQUIRE_AUTH_HEADER
+              value: "true"
+            - name: DATABASE_URL
+              value: {{ .Values.postgres.db_url | quote }}
+          readinessProbe:
+            httpGet:
+              path: /{{ include "todo.name" . }}/health
+              port: http
+            periodSeconds: 10
+          # Liveness only checks the process; a database outage should not restart the pod.
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 20
+            failureThreshold: 6
+          resources: {{- toYaml .Values.resources | nindent 12 }}

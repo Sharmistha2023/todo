@@ -1,0 +1,6 @@
+.env
+.dkubex-app.env
+.venv/
+__pycache__/
+app.log
+*.tgz

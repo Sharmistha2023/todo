@@ -1,0 +1,25 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/dkubeio/todo
+  tag: ""
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8080
+
+# Hostname for the HTTPRoute. "*" or empty means match any host.
+hostname: "*"
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 192Mi
+  limits:
+    cpu: 500m
+    memory: 384Mi
+
+# Injected by DKubeX, which provisions the database because Chart.yaml declares `postgres`.
+postgres:
+  db_url: ""

@@ -1,0 +1,33 @@
+apiVersion: v2
+name: todo
+description: A simple todo list backed by PostgreSQL.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+
+annotations:
+  dkubex: |
+    url: "/todo"
+    displayName: Todo
+    icon: "https://raw.githubusercontent.com/dkubeio/todo/main/assets/icon.svg"
+    docs: "https://dkubeio.github.io/docs-site/components/todo/"
+    images:
+      - "https://raw.githubusercontent.com/dkubeio/todo/main/assets/screenshot-1.png"
+    description: "A simple todo list backed by PostgreSQL."
+    categories:
+      - "Other"
+    roles:
+      - "admin"
+      - "user"
+    resources:
+      cpu:
+        min: "50m"
+        recommended: "100m"
+      memory:
+        min: "96Mi"
+        recommended: "192Mi"
+    dependencies:
+      - postgres
+    routing:
+      type: basepath
+    timeout: "5m"
